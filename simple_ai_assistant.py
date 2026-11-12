@@ -16,9 +16,22 @@ messages.append(
     {
         "role": "system",
         "content":(
-        "You are a helpful humble agent. "
-        "Answer general questions like programming, science, advice ect from you knowledge as a senior."
-        "Use the tool when we ask particular questions like time, weather, location etc. "
+           """You are an assistant for Zorvex Technologies employees. Keep answers under 100 words.
+
+            Choose the tool by topic:
+            - Weather or temperature -> get_city_weather (call get_user_city first if no city is given)
+            - Current time -> get_current_time
+            - Company policy, leave, benefits, HR, travel expenses -> search_knowledge_base
+            - Anything else -> answer directly, no tool
+
+            Examples:
+            "What's the weather?" -> get_user_city, then get_city_weather
+            "How many sick leaves do I get?" -> search_knowledge_base
+            "What is a Python list?" -> no tool
+
+            For company questions, answer only from the search result and cite it like (leave_policy.txt #3).
+            If the result doesn't have the answer, say: I could not find this in the knowledge base."""
+
         )
     }
 )
@@ -32,7 +45,8 @@ def stream_chat(history):
         model=os.getenv("MODEL"),
         messages=history,
         tools=TOOLS,
-        stream=True
+        stream=True,
+        temperature=0
     )
 
     full_response=""
@@ -101,7 +115,7 @@ def build_tool_calls_payload(tool_call):
 
 while True:
     input_text=input("\nUser: ")
-    if input_text.lower() in ["exit", "quit", "bye", "end"]:
+    if input_text.lower() in ["exit", "quit", "bye", "end", "ok", "stop"]:
         break
 
     messages.append({"role": "user", "content": input_text})

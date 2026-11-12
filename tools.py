@@ -4,6 +4,7 @@ import json
 import requests
 
 from Utilities.utilities import log
+from rag import load_chunks_and_search
 
 
 def get_current_time():
@@ -18,7 +19,20 @@ def get_city_weather(city):
 def get_user_city():
     return "Mumbai"
 
+def search_knowledge_base(query):
+    results= load_chunks_and_search(query, 3)
 
+    blocks= []
+    for r in results:
+        sourceFileName=r['source']
+        chunk_id=r['chunk_id']
+        chunkText=r['text']
+
+        header= f"{sourceFileName} #{chunk_id}"
+        block= f"{header}\n{chunkText}"
+        blocks.append(block)
+
+    return "\n\n".join(blocks)
 
 
 TOOLS=[
@@ -60,14 +74,31 @@ TOOLS=[
                 "properties":{ },
             }
         }
+    },
+    {
+        "type":"function",
+        "function":{
+            "name":"search_knowledge_base",
+            "description":"It stores the information about the user's organization (or company). It stores the information about the organization's hiring process, hr_docs, leave policies, medical policy, rca docs, tech docs, travel expenss etc. Use it whenever the user want any information about its comapny or orgnaization.",
+            "parameters":{
+                "type":"object",
+                "properties":{
+                    "query":{
+                        "type":  "string",
+                        "description": "User's question wrtitten in short and self sustaining manner. It should be clear and concise, providing enough context for the model to understand the user's intent and generate an appropriate response.",
+                    }
+                },
+                "required":["query"]
+            }
+        }
     }
-    
 ]
 
 FUNCTION_NAME_TO_FUNCTION_MAP={
     "get_current_time":get_current_time,
     "get_current_weather": get_city_weather,
-    "get_user_city": get_user_city
+    "get_user_city": get_user_city,
+    "search_knowledge_base": search_knowledge_base
 }
 
 def run_tool(tool_call):
